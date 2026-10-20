@@ -176,7 +176,8 @@ test('command output, tool rows and the spinner wear the skin', async ($, on) =>
       surface,
     })
     const drawn = JSON.stringify(await tool.drawn())
-    expect(drawn).toContain('"borderStyle":"round"')
+    if (surface === 'terminal') expect(drawn).toContain('"borderStyle":"round"')
+    else expect(drawn).not.toContain('"borderStyle"')
     expect((await tool.find({ type: 'Text', text: /engine/ }))?.text).toBe('engine')
     await tool.unmount()
   }
@@ -189,4 +190,18 @@ test('command output, tool rows and the spinner wear the skin', async ($, on) =>
   })
   expect((await spinner.find({ type: 'Text', text: /▸ CREATING NOTES\.MD/ }))?.text).toBeTruthy()
   await spinner.unmount()
+})
+
+test('fill paints the cards in the skin colours, and turns off for a light theme', async ($, on) => {
+  setUp(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const filled = await $.ui.mount({ ...REPLY('hi'), surface: 'desktop' })
+  expect(JSON.stringify(await filled.drawn())).toContain('"backgroundColor":"#140430"')
+  await filled.unmount()
+
+  expect((await $.command.run(RUN('fill off'))).text).toBe('Fill off: only the frames glow.')
+  const framed = await $.ui.mount({ ...REPLY('hi'), surface: 'desktop' })
+  expect(JSON.stringify(await framed.drawn())).not.toContain('"backgroundColor":"#140430"')
+  await framed.unmount()
 })

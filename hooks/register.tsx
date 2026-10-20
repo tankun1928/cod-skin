@@ -10,6 +10,7 @@ const DEFAULT: Look = {
   skin: 'cyberpunk',
   layout: 'cards',
   isBannerOn: true,
+  isFilled: true,
   name: '',
   avatar: null,
   background: null,
@@ -30,6 +31,7 @@ type Change = {
   skin?: string
   layout?: string
   banner?: boolean
+  fill?: boolean
   name?: string
   avatar_path?: string
   background_path?: string
@@ -69,6 +71,11 @@ async function apply($: EngineInterface, change: Change) {
     await save($, now => ({ ...now, isBannerOn }))
     said.push(`Banner ${isBannerOn ? 'on' : 'off'}.`)
   }
+  if (change.fill !== undefined) {
+    const isFilled = change.fill
+    await save($, now => ({ ...now, isFilled }))
+    said.push(isFilled ? 'Fill on: the skin colours fill the cards.' : 'Fill off: only the frames glow.')
+  }
   if (change.name !== undefined) {
     const name = change.name.trim().slice(0, 24)
     await save($, now => ({ ...now, name }))
@@ -101,11 +108,12 @@ async function status($: EngineInterface) {
   const now = await read($, look)
 
   return [
-    `Skin: ${now.skin} · layout: ${now.layout} · banner: ${now.isBannerOn ? 'on' : 'off'} · name: ${now.name || '(none)'} · avatar: ${now.avatar ? 'set' : 'none'} · background: ${now.background ? 'set' : 'none'}`,
+    `Skin: ${now.skin} · layout: ${now.layout} · banner: ${now.isBannerOn ? 'on' : 'off'} · fill: ${now.isFilled ? 'on' : 'off'} · name: ${now.name || '(none)'} · avatar: ${now.avatar ? 'set' : 'none'} · background: ${now.background ? 'set' : 'none'}`,
     '',
     ...SKIN_NAMES.map(name => `  /skin ${name}${name === 'off' ? '  (the chat as usual)' : `  ${SKINS[name].label}`}`),
     '  /skin layout cards | bubbles',
     '  /skin banner on | off',
+    '  /skin fill on | off                 (off for a light app theme)',
     '  /skin name <your name>',
     '  /skin avatar <path to picture>      (up to about 44 KB)',
     '  /skin bg <path to picture>          (up to about 80 KB)',
@@ -129,6 +137,8 @@ function parse(args: string): Change | 'help' | 'reset' {
       return { layout: value }
     case 'banner':
       return { banner: value !== 'off' }
+    case 'fill':
+      return { fill: value !== 'off' }
     case 'name':
       return { name: value }
     case 'avatar':
@@ -159,13 +169,14 @@ export const register: Register = on => {
       .register({
         name: 'customize',
         description:
-          "Changes the look of this chat (the cod-skin plugin): the skin (cyberpunk, synthwave, matrix, or off), the layout (cards, or bubbles with the person's messages on the right), the animated banner above the prompt, the name on it, and the person's avatar and banner background picture, given as paths to PNG, JPEG, GIF or WebP files on this computer. Pictures must be small: an avatar up to about 44 KB, a background up to about 80 KB. If one is larger, make a smaller copy first (for example with Python Pillow: 256 px wide for an avatar, 800 px wide for a background, saved as JPEG at quality 80) and pass that copy's path.",
+          "Changes the look of this chat (the cod-skin plugin): the skin (cyberpunk, synthwave, matrix, or off), the layout (cards, or bubbles with the person's messages on the right), whether the skin colours fill the cards, the animated banner above the prompt, the name on it, and the person's avatar and banner background picture, given as paths to PNG, JPEG, GIF or WebP files on this computer. Pictures must be small: an avatar up to about 44 KB, a background up to about 80 KB. If one is larger, make a smaller copy first (for example with Python Pillow: 256 px wide for an avatar, 800 px wide for a background, saved as JPEG at quality 80) and pass that copy's path.",
         inputSchema: {
           type: 'object',
           properties: {
             skin: { type: 'string', enum: SKIN_NAMES },
             layout: { type: 'string', enum: ['cards', 'bubbles'] },
             banner: { type: 'boolean', description: 'Show the animated banner above the prompt' },
+            fill: { type: 'boolean', description: 'Fill the cards with the skin colours (turn off for a light app theme)' },
             name: { type: 'string', description: 'The name on the banner (up to 24 characters)' },
             avatar_path: { type: 'string', description: 'Absolute path to the avatar picture' },
             background_path: { type: 'string', description: 'Absolute path to the banner background picture' },
@@ -228,8 +239,8 @@ export const register: Register = on => {
     )
   })
 
-  // Claude's replies: a frame in the second neon colour, headed once a reply.
-  // No fill behind them, so the text stays readable on a light theme too.
+  // Claude's replies: a frame in the second neon colour, headed once a reply,
+  // filled with the skin's panel colour unless fill is off (a light theme).
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
     const now = await read($, look)
     if (now.skin === 'off') return next(e)
@@ -246,6 +257,7 @@ export const register: Register = on => {
         borderColor={p.secondary}
         paddingX={1}
         marginTop={isFirst ? 1 : 0}
+        {...(now.isFilled ? { backgroundColor: p.panel } : {})}
         {...(now.layout === 'bubbles' ? { width: '90%' } : {})}
       >
         {isFirst && (
@@ -297,7 +309,13 @@ export const register: Register = on => {
     const color = e.props.isErrored ? ERROR : p.accent
 
     return (
-      <Box flexDirection="column" borderStyle="round" borderColor={color} paddingX={1}>
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor={color}
+        paddingX={1}
+        {...(now.isFilled ? { backgroundColor: p.panel } : {})}
+      >
         <Text color={color} bold>
           ▸ /{e.props.command}
           {e.props.args === '' ? '' : ` ${e.props.args}`}
@@ -307,11 +325,12 @@ export const register: Register = on => {
     )
   })
 
-  // Tool calls and folded runs of them: the engine's own row, framed.
+  // Tool calls and folded runs of them: the engine's own row, framed. On the
+  // terminal only: the desktop draws those rows itself, outside the tree.
   on('ui.render', { component: 'ToolGroup' }, async ($, e, next) => {
     const inner = await next(e)
     const now = await read($, look)
-    if (now.skin === 'off') return inner
+    if (now.skin === 'off' || e.surface !== 'terminal') return inner
     const { Box } = $.ui.resolve(e)
 
     return (
@@ -324,7 +343,7 @@ export const register: Register = on => {
   on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {
     const inner = await next(e)
     const now = await read($, look)
-    if (now.skin === 'off' || e.props.isExpanded === true) return inner
+    if (now.skin === 'off' || e.surface !== 'terminal' || e.props.isExpanded === true) return inner
     const p = SKINS[now.skin]
     const { Box } = $.ui.resolve(e)
 

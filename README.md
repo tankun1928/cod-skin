@@ -9,8 +9,8 @@ Neon skins for the Claude Code chat. Your messages and Claude's become glowing c
 ## What it does
 
 - **3 skins:** `cyberpunk` (magenta, cyan and yellow on deep violet), `synthwave` (sunset pink and orange), `matrix` (phosphor green). `off` gives the chat back as usual.
-- **Neon message cards:** your messages and Claude's replies get glowing frames, headers and portraits.
-- **The rest of the chat:** slash-command output becomes a neon readout, tool calls ("Running a command") get neon frames that light up while they run, and the working indicator shows the step in capitals.
+- **Neon message cards:** your messages and Claude's replies become filled cards with glowing frames, headers and portraits.
+- **The rest of the chat:** slash-command output becomes a neon readout, tool calls get neon frames that light up while they run (in a terminal; the desktop app draws those rows itself), and the working indicator shows the step in capitals.
 - **Animated banner:** a scrolling neon grid, a scanline, your portrait with a pulsing ring, and your name with a glitch effect. It shows `PROCESSING` while Claude works and `ONLINE` when idle.
 - **Your avatar and background:** any PNG, JPEG, GIF or WebP picture on your computer.
 - **Two layouts:** `cards` (full width) or `bubbles` (your messages on the right, like a chat app).
@@ -54,6 +54,7 @@ Type `/skin` for the menu:
 | `/skin bg C:\Users\me\Pictures\city.jpg` | Set the banner's background picture |
 | `/skin clear avatar` / `/skin clear bg` | Remove a picture |
 | `/skin banner off` | Hide the banner |
+| `/skin fill off` | Only the frames glow, no filled cards (use this with a light app theme) |
 | `/skin reset` | Back to the defaults |
 
 **Easier still:** just ask Claude, for example *"use C:\Users\me\Pictures\me.jpg as my avatar and switch to synthwave"*. If the picture is too large, Claude makes a smaller copy first.

@@ -1,6 +1,6 @@
 {
   "name": "cod-skin",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Neon skins for the Claude Code chat: cyberpunk cards, an animated banner, your own avatar and background picture",
   "author": { "name": "tankun1928" },
   "types": "./types/index.d.ts"

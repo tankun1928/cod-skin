@@ -5,6 +5,7 @@ export type Look = {
   skin: SkinName
   layout: Layout
   isBannerOn: boolean
+  isFilled: boolean
   name: string
   avatar: Picture | null
   background: Picture | null
