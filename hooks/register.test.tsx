@@ -37,8 +37,9 @@ function setUp(on: On) {
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('ui.render', ($, e) => {
     const { Text } = $.ui.resolve(e)
+    const word = e.component === 'Spinner' ? (e.props as { word: string }).word : 'engine'
 
-    return <Text>engine</Text>
+    return <Text>{word}</Text>
   })
 }
 
@@ -131,4 +132,61 @@ test('Claude can change the look through its tool', async ($, on) => {
   const mine = await $.ui.mount({ ...USER('hi'), surface: 'desktop' })
   expect((await mine.find({ type: 'Text', text: /> USER/ }))?.text).toBeTruthy()
   await mine.unmount()
+})
+
+test('messages the desktop app sends are styled; notifications are not', async ($, on) => {
+  setUp(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const fromApp = await $.ui.mount({
+    ...USER('from the app'),
+    props: { text: 'from the app', origin: { kind: 'sdk' }, isExpanded: true },
+    surface: 'desktop',
+  })
+  expect((await fromApp.find({ type: 'Text', text: /◢ YOU/ }))?.text).toBeTruthy()
+  await fromApp.unmount()
+
+  const notice = await $.ui.mount({
+    ...USER('task done'),
+    props: { text: 'task done', origin: { kind: 'task-notification' }, isExpanded: true },
+    surface: 'desktop',
+  })
+  expect((await notice.find({ type: 'Text', text: /engine/ }))?.text).toBe('engine')
+  await notice.unmount()
+})
+
+test('command output, tool rows and the spinner wear the skin', async ($, on) => {
+  setUp(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const output = await $.ui.mount({
+      plugin: 'cod-skin',
+      component: 'CommandOutput',
+      props: { command: 'skin', args: 'layout bubbles', text: 'Layout: bubbles.', isErrored: false },
+      surface,
+    })
+    expect((await output.find({ type: 'Text', text: /▸ \/skin layout bubbles/ }))?.text).toBeTruthy()
+    await output.unmount()
+
+    const tool = await $.ui.mount({
+      plugin: 'cod-skin',
+      component: 'ToolUse',
+      props: { tool_use_id: 't1', tool: 'Bash', input: { command: 'ls' }, isRunning: true, isErrored: false, isInterrupted: false },
+      surface,
+    })
+    const drawn = JSON.stringify(await tool.drawn())
+    expect(drawn).toContain('"borderStyle":"round"')
+    expect((await tool.find({ type: 'Text', text: /engine/ }))?.text).toBe('engine')
+    await tool.unmount()
+  }
+
+  const spinner = await $.ui.mount({
+    plugin: 'cod-skin',
+    component: 'Spinner',
+    props: { word: 'Creating notes.md', message: null, suffix: '…', mode: 'responding' },
+    surface: 'desktop',
+  })
+  expect((await spinner.find({ type: 'Text', text: /▸ CREATING NOTES\.MD/ }))?.text).toBeTruthy()
+  await spinner.unmount()
 })

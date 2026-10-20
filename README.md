@@ -13,6 +13,7 @@ Neon skins for the Claude Code chat. Your messages and Claude's become glowing c
 
 - **3 skins / 3 ธีม:** `cyberpunk` (magenta, cyan and yellow on deep violet), `synthwave` (sunset pink and orange), `matrix` (phosphor green). `off` gives the chat back as usual.
 - **Neon message cards / การ์ดข้อความนีออน:** your messages and Claude's replies get glowing frames, headers and portraits.
+- **The rest of the chat / ส่วนอื่นของแชท:** slash-command output becomes a neon readout, tool calls ("Running a command") get neon frames that light up while they run, and the working indicator shows the step in capitals.
 - **Animated banner / แบนเนอร์เคลื่อนไหว:** a scrolling neon grid, a scanline, your portrait with a pulsing ring, and your name with a glitch effect. It shows `PROCESSING` while Claude works and `ONLINE` when idle.
 - **Your avatar and background / รูปโปรไฟล์และพื้นหลัง:** any PNG, JPEG, GIF or WebP picture on your computer.
 - **Two layouts / 2 แบบ layout:** `cards` (full width) or `bubbles` (your messages on the right, like a chat app).

@@ -16,6 +16,11 @@ const DEFAULT: Look = {
 }
 const look = atom({ plugin: 'cod-skin', key: 'look' } as const, DEFAULT)
 const TOOL = 'mcp__cod-skin__customize'
+const ERROR = '#ff3355'
+
+// Where the person's own messages come from: typed at the terminal, sent by
+// the desktop app (an SDK host), a phone through the bridge.
+const OWN_ORIGINS = new Set(['composer', 'sdk', 'bridge', 'unclassified'])
 
 // Words the terminal's spinner cycles through instead of its own.
 const SPIN_WORDS = ['Jacking in', 'Decrypting', 'Overclocking', 'Splicing', 'Netrunning', 'Rerouting', 'Compiling ICE']
@@ -193,7 +198,8 @@ export const register: Register = on => {
   // The person's own messages: a neon card, with their avatar and name.
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     const now = await read($, look)
-    if (now.skin === 'off' || e.props.origin.kind !== 'composer') return next(e)
+    const isOwn = OWN_ORIGINS.has(e.props.origin.kind) && e.props.task === undefined && e.props.from === undefined
+    if (now.skin === 'off' || !isOwn) return next(e)
     const p = SKINS[now.skin]
     const t = $.ui.resolve(e)
     const { Box, Text } = t
@@ -282,10 +288,61 @@ export const register: Register = on => {
     )
   })
 
-  // The terminal's spinner speaks the skin's language.
+  // A slash command's output: a terminal readout in the skin's colours.
+  on('ui.render', { component: 'CommandOutput' }, async ($, e, next) => {
+    const now = await read($, look)
+    if (now.skin === 'off') return next(e)
+    const p = SKINS[now.skin]
+    const { Box, Text, Markdown } = $.ui.resolve(e)
+    const color = e.props.isErrored ? ERROR : p.accent
+
+    return (
+      <Box flexDirection="column" borderStyle="round" borderColor={color} paddingX={1}>
+        <Text color={color} bold>
+          ▸ /{e.props.command}
+          {e.props.args === '' ? '' : ` ${e.props.args}`}
+        </Text>
+        <Markdown text={e.props.text} />
+      </Box>
+    )
+  })
+
+  // Tool calls and folded runs of them: the engine's own row, framed.
+  on('ui.render', { component: 'ToolGroup' }, async ($, e, next) => {
+    const inner = await next(e)
+    const now = await read($, look)
+    if (now.skin === 'off') return inner
+    const { Box } = $.ui.resolve(e)
+
+    return (
+      <Box borderStyle="round" borderColor={SKINS[now.skin].dim} paddingX={1}>
+        {inner}
+      </Box>
+    )
+  })
+
+  on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {
+    const inner = await next(e)
+    const now = await read($, look)
+    if (now.skin === 'off' || e.props.isExpanded === true) return inner
+    const p = SKINS[now.skin]
+    const { Box } = $.ui.resolve(e)
+
+    return (
+      <Box borderStyle="round" borderColor={e.props.isErrored ? ERROR : e.props.isRunning ? p.accent : p.dim} paddingX={1}>
+        {inner}
+      </Box>
+    )
+  })
+
+  // The spinner speaks the skin's language: its own words on the terminal,
+  // the step it names in capitals on the desktop.
   on('ui.render', { component: 'Spinner' }, async ($, e, next) => {
     const now = await read($, look)
-    if (now.skin === 'off' || e.surface !== 'terminal' || e.props.mode === 'tool-use') return next(e)
+    if (now.skin === 'off' || e.props.mode === 'tool-use') return next(e)
+    if (e.surface !== 'terminal') {
+      return next({ ...e, props: { ...e.props, word: `▸ ${e.props.word.toUpperCase()}` } })
+    }
     let hash = 0
     for (const ch of e.props.word) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0
 
