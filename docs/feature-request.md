@@ -1,9 +1,5 @@
 # Feature request: let people make the Claude desktop app their own
 
-**สรุปภาษาไทย:** ขอให้ทีม Claude เปิดให้ผู้ใช้และ plugin แต่งหน้าตาแอป Claude desktop ได้ทั้งหน้าต่าง: ธีมสี ภาพพื้นหลังเต็มหน้าต่าง รูปโปรไฟล์และชื่อที่แสดงในแชท ฟอนต์ และแกลเลอรีให้แชร์ธีมกัน เหตุผลคือการแต่งหน้าตาได้ทำให้คนรู้สึกว่าเป็นของตัวเองและอยากใช้ทุกวัน และยังไม่มีผู้ช่วย AI เจ้าไหนทำแบบนี้ ถ้า Claude ทำก่อนจะเป็นจุดขายที่ดึงผู้ใช้ใหม่ได้
-
----
-
 ## The idea
 
 Let people style the whole Claude desktop app, not only the chat inside it: the colours, a background picture, their own avatar and name, the fonts. Let plugins do the same, and let people share what they make.
