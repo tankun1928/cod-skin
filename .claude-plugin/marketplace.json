@@ -1,0 +1,6 @@
+{
+  "name": "cod-skin",
+  "owner": { "name": "tankun1928" },
+  "description": "Neon skins for the Claude Code chat: cyberpunk cards, an animated banner, your own avatar and background",
+  "plugins": [{ "name": "cod-skin", "source": "./" }]
+}
